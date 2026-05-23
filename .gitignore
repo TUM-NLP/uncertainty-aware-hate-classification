@@ -1,0 +1,26 @@
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Output and results
+output/
+results/
+# SSH keys and credentials
+*.pem
+*.key
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS files
+.DS_Store
+Thumbs.db
+

@@ -1,0 +1,10 @@
+transformers==4.50
+huggingface_hub
+git+https://github.com/IINemo/lm-polygraph.git
+torch
+boto3
+pandas
+scikit-learn
+numpy
+accelerate
+bitsandbytes
