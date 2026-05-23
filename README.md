@@ -1,194 +1,243 @@
-# uncertainty-aware-hate-classification
+# Uncertainty-Aware Hate Speech Classification
 
-This project implements and compares three distinct approaches for hate speech detection using Large Language Models (LLMs), followed by uncertainty quantification analysis to measure prediction quality and reliability.
+This repository contains the code for our EMNLP 2026 paper. We investigate how different prompting strategies affect both hate speech classification performance and prediction reliability in Large Language Models (LLMs), using white-box uncertainty quantification to measure when the model "knows what it doesn't know."
 
-1. Basic Prompting: Direct zero-shot prompting without additional context or examples.
-2. Persona Prompting: Incorporates demographic information (age, gender, race, education) to provide an annotator perspective context to the model.
-3. Annotation-Grounded Few-Shot Prompting: Leverages Amazon Bedrock Knowledge Bases to retrieve semantically similar annotated examples, providing relevant context for improved classification.
+## Overview
 
-Then, calculates Uncertainty Quantification Metrics as a quality measurement.
+We compare three prompting strategies for hate speech detection and analyze their uncertainty profiles:
+
+| Approach | Description |
+|---|---|
+| **Baseline** | Zero-shot prompting — the model classifies hate speech without any additional context |
+| **Persona Prompting** | The model is given a synthetic annotator persona (age, gender, race, education) before classifying |
+| **Annotation-Grounded Few-Shot** | Semantically similar annotated examples are retrieved from Amazon Bedrock Knowledge Bases and provided as few-shot context |
+
+For each prediction, the pipeline computes seven uncertainty scores via [LM-Polygraph](https://github.com/IINemo/lm-polygraph):
+
+| Metric | Abbreviation |
+|---|---|
+| Claim-Conditioned Probability | `ccp` |
+| Maximum Sequence Probability | `msp` |
+| Perplexity | `perplexity` |
+| Mean Token Entropy | `mte` |
+| Mean Pointwise Mutual Information | `mpmi` |
+| Mean Conditional Pointwise Mutual Information | `mcpmi` |
+| Probability of being True | `ptrue` |
+
+## Datasets
+
+The project uses two hate speech corpora:
+
+- **MHS** — [Measuring Hate Speech](https://huggingface.co/datasets/ucberkeley-dlab/measuring-hate-speech) (UC Berkeley)
+- **CREHate** — [CRoss-cultural English Hate Speech](https://huggingface.co/datasets/Babelscape/CREHate)
+
+Labels are three-class:
+
+| Score | Meaning |
+|---|---|
+| `0` | Not hate speech |
+| `1` | Ambiguous |
+| `2` | Hate speech |
+
+Each dataset is split into:
+- **Test set** (`df_test_ds1.pkl` / `df_test_ds2.pkl`): 500 annotated comments for evaluation
+- **Knowledge base** (`df_knowledge_base_ds1.pkl` / `df_knowledge_base_ds2.pkl`): 1,000 annotated comments with full annotator demographic metadata (age, gender, race, education) used for few-shot retrieval
+
+Both splits are stored as Pandas DataFrames in `.pkl` format and contain text content, hate speech labels, annotator IDs, and annotator demographic attributes.
+
+## Repository Structure
+
+```
+uncertainty-aware-hate-classification/
+├── config.py               # All experiment configuration (model, paths, generation params)
+├── main.py                 # Entry point — runs all three approaches end-to-end
+├── requirements.txt
+├── data/
+│   ├── df_test_ds1.pkl          # MHS test set
+│   ├── df_test_ds2.pkl          # CREHate test set
+│   ├── df_knowledge_base_ds1.pkl
+│   └── df_knowledge_base_ds2.pkl
+├── src/
+│   ├── prompt.py           # Prompt construction for all three approaches
+│   ├── evaluate.py         # Evaluation runners (baseline, persona, annotation-grounded)
+│   ├── uncertainty.py      # Model loading and UncertaintyPipeline (LM-Polygraph integration)
+│   ├── rag.py              # RAG orchestration
+│   ├── rag_utils.py        # Bedrock Knowledge Base retrieval utilities
+│   └── helpers.py          # Serialization helpers
+└── utils/
+    └── bedrock.py          # AWS Bedrock client utilities
+```
 
 ## Prerequisites
-- AWS Account with appropriate permissions
-- SSH client installed on your local machine
-- Python == 3.11
 
+- Python 3.11
+- AWS account with permissions for Amazon Bedrock and S3
+- CUDA-capable GPU (development used an NVIDIA A10G on a `g5.2xlarge` EC2 instance)
+- A [Hugging Face](https://huggingface.co/) account with access to the target model (e.g., `meta-llama/Llama-3.1-8B-Instruct`)
 
-## Installation
+## Setup
+
 ### 1. Clone the repository
+
 ```bash
 git clone git@github.com:TUM-NLP/uncertainty-aware-hate-classification.git
+cd uncertainty-aware-hate-classification
 ```
 
-### 2. Create Test and Knowledge Base Datasets
-The project uses the Measuring Hate Speech dataset (MHS) and CRoss-cultural English Hate speech (CREHate) dataset from Hugging Face, formatted as follows:
+### 2. Create and activate a virtual environment
 
-Text: [comment text]
-Hate Speech Score: [0, 1, or 2]
-Where:
-
-0: Not hate speech
-1: Ambiguous
-2: Hate speech
-
-The dataset is curated in two parts, seperately for both MHS and CREHate datasets.
-- Test Dataset: 500 annotated comments for evaluation
-- Knowledge Base Dataset for Bedrock: 1000 annotated comments with annotator demographics metadata (age, gender, race, education)
-
-
-### 3. Set Up Amazon Bedrock Knowledge Base
-The Annotation-Grounded Few-Shot Prompting approach requires an Amazon Bedrock Knowledge Base for the semantic retrieval of similar annotated examples.
-
-#### 1.Prepare your data source
-
-- Upload your Knowledge Base dataset (1,000 samples) to Amazon S3
-- Ensure proper formatting with text, labels, and metadata
-
-#### 2.Create Knowledge Base
-- Navigate to Amazon Bedrock Console → Knowledge bases
-- Click "Create knowledge base"
-- Configure embedding model (e.g., Amazon Titan Embeddings)
-- Connect your S3 data source
-
-#### 3.Data Source and index
-
-- Initiate data sync to ingest and index your documents
-- Wait for completion (typically several minutes)
-- Test retrieval with sample queries
-
-#### 4. Update config file
-- Copy your Knowledge Base ID and Data Source ID
-- Update config.py with relevant information
-For detailed instructions, refer to the docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base.html
-
-
-## GPU Setup Option
-This repository requires a GPU instance and you can follow these steps to set up and AWS EC2 instance to run this code. 
-
-### 1. Launch EC2 Instance
-1. Navigate to the console.aws.amazon.com/ec2/
-2. Click **"Launch instance"**
-3. Give your instance a name (e.g., "ml-gpu-instance")
-
-### 2. Select AMI
-- Choose **Deep Learning Base AMI with Single CUDA (Amazon Linux 2023)**
-- This AMI comes pre-configured with CUDA toolkit and NVIDIA drivers
-
-### 3. Choose Instance Type
-- Select your preferred instance type. 
-- **g5.2xlarge** instance used in the development of this work.
-- Specifications: 1x NVIDIA A10G GPU, 8 vCPUs, 32 GB RAM
-
-### 4. Configure Key Pair
-1. Create a new key pair or select existing
-2. Download the `.pem` file and store securely
-3. Set proper permissions: `chmod 400 your-key.pem`
-
-### 5. Network Settings (Security Group)
-Configure inbound rules:
-- **SSH (Port 22)**: Source = "My IP" (for secure access)
-- **Jupyter (Port 8888)**: Source = "My IP" (for notebook access)
-
-### 6. Configure Storage
-- Change default 30 GiB to **100 GiB** (or more for large datasets)
-- Keep volume type as **gp3** (cost-effective SSD)
-
-### 7. Launch Instance
-- Review settings and click **"Launch instance"**
-- Wait 2-3 minutes for instance to initialize
-
-## Connecting to Your Instance
-
-### Fix Key Permissions (First Time Only)
-```bash
-chmod 400 /path/to/your-key.pem
-```
-
-### SSH Connection
-```bash
-ssh -i /path/to/your-key.pem ec2-user@your-instance-dns
-```
-
-### Verify GPU Access
-Once connected, verify GPU is available:
-```bash
-nvidia-smi
-```
-
-## Instance Details
-- **Instance Type**: g5.2xlarge
-- **GPU**: NVIDIA A10G (24GB GPU memory)
-- **AMI**: Deep Learning Base AMI with Single CUDA (Amazon Linux 2023)
-- **Default User**: ec2-user
-
-## Cost Considerations
-- Remember to **stop** or **terminate** your instance when not in use
-- g5.2xlarge instances incur charges while running
-- Use AWS Cost Explorer to monitor spending
-
-
-# Environment Setup
-
-## Install Python 3.11
-```bash
-sudo dnf install python3.11 -y
-```
-
-## Create and Activate Virtual Environment
 ```bash
 python3.11 -m venv venv
 source venv/bin/activate
-```
-
-## Upgrade pip
-```bash
 pip install --upgrade pip setuptools wheel
-```
-
----
-
-## Transfer Project to EC2 Instance
-
-From your **local machine**, run this command to sync your code repository to the EC2 instance:
-
-```bash
-rsync -av -e "ssh -i /path/to/your-key.pem" \
-  --exclude 'venv' \
-  --exclude '.venv' \
-  --exclude 'output' \
-  --exclude '__pycache__' \
-  --exclude '*.pyc' \
-  --exclude '.git' \
-  /path/to/your/uncertainty-aware-hate-classification/ \
-  ec2-user@your-instance-dns:~/uncertainty-aware-hate-classification/
-```
-
----
-
-## Run Your Code on EC2 instance
-
-```bash
-# Navigate to project directory
-cd ~/uncertainty-aware-hate-classification/
-
-# Activate virtual environment
-source ~/venv/bin/activate
-
-# Install dependencies
 pip install -r requirements.txt
+```
 
-# Run the main script
+### 3. Configure the experiment
+
+Edit `config.py` and fill in the required fields:
+
+```python
+hf_login_token = '<your-huggingface-token>'
+model_path     = 'meta-llama/Llama-3.1-8B-Instruct'  # or any compatible HF model
+
+test_df_path   = 'data/df_test_ds1.pkl'               # switch to ds2 for CREHate
+kb_df_path     = 'data/df_knowledge_base_ds1.pkl'
+
+knowledge_base_id = '<your-bedrock-knowledge-base-id>'
+data_source_id    = '<your-opensearch-data-source-id>'
+region            = 'us-east-1'
+```
+
+Optional generation settings (greedy decoding is the default):
+
+```python
+load_in_4bit = False   # set True to quantize the model and save GPU memory
+batch_size   = 16
+```
+
+### 4. Set Up the Amazon Bedrock Knowledge Base
+
+The annotation-grounded approach requires a Bedrock Knowledge Base for semantic retrieval.
+
+**a. Upload the knowledge base dataset to S3**
+
+```bash
+aws s3 cp data/df_knowledge_base_ds1.pkl s3://<your-bucket>/kb/
+```
+
+**b. Create the Knowledge Base in the AWS Console**
+
+1. Go to **Amazon Bedrock → Knowledge bases → Create knowledge base**
+2. Select an embedding model (e.g., *Amazon Titan Embeddings*)
+3. Connect your S3 bucket as the data source
+4. Start ingestion and wait for the sync to complete
+
+**c. Copy the IDs into `config.py`**
+
+```python
+knowledge_base_id = '<KB-ID-from-console>'
+data_source_id    = '<DataSource-ID-from-console>'
+```
+
+For full documentation see the [AWS Bedrock Knowledge Bases guide](https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base.html).
+
+## Running the Experiments
+
+```bash
 python main.py
 ```
 
----
+`main.py` executes the full pipeline in sequence:
 
-## Download Results from EC2 instance
+1. **Context retrieval** — queries Bedrock for each test instance and saves `output/contexts.json`
+2. **Baseline evaluation** — zero-shot prompting + uncertainty scoring
+3. **Persona evaluation** — demographic persona prompting + uncertainty scoring
+4. **Annotation-grounded evaluation** — few-shot prompting with retrieved examples + uncertainty scoring
 
-From your **local machine**, run this command to retrieve the output saved into your EC2 instance:
+Results are written to the `output/` directory as timestamped JSON files:
+
+```
+output/
+├── contexts.json
+├── baseline_results_greedy_<timestamp>.json
+├── persona_results_greedy_<timestamp>.json
+└── annotation-grounded_results_greedy_<timestamp>.json
+```
+
+Each result file maps `comment_id → annotator_id → {text, prompt, generation_text, uncertainty{ccp, msp, perplexity, mte, mpmi, mcpmi, ptrue}}`.
+
+## Running on AWS EC2 (Recommended)
+
+### Launch an instance
+
+1. Go to **EC2 → Launch instance**
+2. Choose **Deep Learning Base AMI with Single CUDA (Amazon Linux 2023)**
+3. Select instance type — `g5.2xlarge` was used in this work (1× NVIDIA A10G, 8 vCPUs, 32 GB RAM)
+4. Create or select a key pair; download and secure the `.pem` file:
+   ```bash
+   chmod 400 your-key.pem
+   ```
+5. Configure inbound rules: SSH (port 22) and Jupyter (port 8888) restricted to your IP
+6. Set storage to at least **100 GiB (gp3)**
+
+### Connect and install Python
+
+```bash
+ssh -i /path/to/your-key.pem ec2-user@<instance-dns>
+
+# On the instance:
+sudo dnf install python3.11 -y
+python3.11 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip setuptools wheel
+```
+
+### Transfer the repository
+
+From your **local machine**:
+
+```bash
+rsync -av -e "ssh -i /path/to/your-key.pem" \
+  --exclude 'venv' --exclude 'output' --exclude '__pycache__' \
+  --exclude '*.pyc' --exclude '.git' \
+  /path/to/uncertainty-aware-hate-classification/ \
+  ec2-user@<instance-dns>:~/uncertainty-aware-hate-classification/
+```
+
+### Run the pipeline
+
+```bash
+cd ~/uncertainty-aware-hate-classification
+source ~/venv/bin/activate
+pip install -r requirements.txt
+python main.py
+```
+
+### Download results
+
+From your **local machine**:
 
 ```bash
 scp -i /path/to/your-key.pem -r \
-  ec2-user@your-instance-public-dns:~/uncertainty-aware-hate-classification/output/ \
-  ./
+  ec2-user@<instance-dns>:~/uncertainty-aware-hate-classification/output/ ./
 ```
+
+> **Cost note:** Stop or terminate your EC2 instance when not in use. Monitor spending with [AWS Cost Explorer](https://aws.amazon.com/aws-cost-management/aws-cost-explorer/).
+
+## Citation
+
+If you use this code, please cite our paper:
+
+```bibtex
+@inproceedings{...,
+  title     = {...},
+  author    = {...},
+  booktitle = {Proceedings of the 2026 Conference on Empirical Methods in Natural Language Processing},
+  year      = {2026},
+}
+```
+
+## License
+
+This project is licensed under the MIT License.
