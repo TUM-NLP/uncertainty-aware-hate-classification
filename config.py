@@ -7,14 +7,13 @@ load_in_4bit = False # TODO: Change this according to your needs
 batch_size = 16 # TODO: Change this according to your needs
 
 output_path = 'output/'
-context_path = f'data/contexts.json'
-kb_df_path = f"data/df_knowledge_base.pkl" # Path to your Knowledge Base
-test_df_path = f"data/df_test.pkl" # Path to test dataset DataFrame
-#ground_truth_path = f"data/pickles/df_test_ground_truth.pkl"
+context_path = f'data/contexts.json' # Save your extracted context (few-shot examples here)
+kb_df_path = f"data/df_knowledge_base_ds1.pkl" # Path to your Knowledge Base
+test_df_path = f"data/df_test_ds1.pkl" # Path to test dataset DataFrame
 
-knowledge_base_id="" # Change with your KB id 
-data_source_id= "" # Change with your Data Source id 
-context_doc_count = 10 # Number of context documents retrieved from Knowledge Base 
+knowledge_base_id="" # Change with your KB id (Amazon Bedrock Knowledge Bases)
+data_source_id= "" # Change with your Data Source id  (OpenSearchServerless)
+context_doc_count = 3 # Number of context documents retrieved from Knowledge Base 
 
 region="us-east-1"
 
