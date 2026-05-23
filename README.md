@@ -3,8 +3,8 @@
 This project implements and compares three distinct approaches for hate speech detection using Large Language Models (LLMs), followed by uncertainty quantification analysis to measure prediction quality and reliability.
 
 1. Basic Prompting: Direct zero-shot prompting without additional context or examples.
-2. Pesona Prompting: Incorporates demographic information (age, gender, race, education) to provide annotator perspective context to the model.
-3. Few-shot Context Aware prompting: Leverages Amazon Bedrock Knowledge Bases to retrieve semantically similar annotated examples, providing relevant context for improved classification.
+2. Persona Prompting: Incorporates demographic information (age, gender, race, education) to provide an annotator perspective context to the model.
+3. Annotation-Grounded Few-Shot Prompting: Leverages Amazon Bedrock Knowledge Bases to retrieve semantically similar annotated examples, providing relevant context for improved classification.
 
 Then, calculates Uncertainty Quantification Metrics as a quality measurement.
 
@@ -21,23 +21,23 @@ git clone git@github.com:TUM-NLP/uncertainty-aware-hate-classification.git
 ```
 
 ### 2. Create Test and Knowledge Base Datasets
-The project uses the Measuring Hate Speech dataset from Hugging Face, formatted as follows:
+The project uses the Measuring Hate Speech dataset (MHS) and CRoss-cultural English Hate speech (CREHate) dataset from Hugging Face, formatted as follows:
 
 Text: [comment text]
 Hate Speech Score: [0, 1, or 2]
 Where:
 
 0: Not hate speech
-1: Uncertain
+1: Ambiguous
 2: Hate speech
 
-The dataset is curated in two parts
+The dataset is curated in two parts, seperately for both MHS and CREHate datasets.
 - Test Dataset: 500 annotated comments for evaluation
 - Knowledge Base Dataset for Bedrock: 1000 annotated comments with annotator demographics metadata (age, gender, race, education)
 
 
 ### 3. Set Up Amazon Bedrock Knowledge Base
-The Few-Shot Context-Aware Prompting approach requires an Amazon Bedrock Knowledge Base for semantic retrieval of similar annotated examples.
+The Annotation-Grounded Few-Shot Prompting approach requires an Amazon Bedrock Knowledge Base for the semantic retrieval of similar annotated examples.
 
 #### 1.Prepare your data source
 
@@ -57,7 +57,7 @@ The Few-Shot Context-Aware Prompting approach requires an Amazon Bedrock Knowled
 - Test retrieval with sample queries
 
 #### 4. Update config file
-- Copy your Knowledge Base ID and Data SOurce ID
+- Copy your Knowledge Base ID and Data Source ID
 - Update config.py with relevant information
 For detailed instructions, refer to the docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base.html
 

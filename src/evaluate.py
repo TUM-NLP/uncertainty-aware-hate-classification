@@ -13,7 +13,7 @@ def evaluate_prompt_items(pipeline, prompt_items: List[PromptItem], batch_size: 
     Runs the pipeline over all PromptItem.prompt strings (batched) and returns:
     - a dict keyed by comment_id
       * baseline → results[comment_id] = payload
-      * persona/context → results[comment_id][annotator_id] = payload
+      * persona/annotation-grounded → results[comment_id][annotator_id] = payload
     - also attaches batch timing info in results["info"]
     """
     
@@ -130,7 +130,7 @@ def run_context_retrieval(
 
     return examples_dict
 
-def run_context_aware(
+def run_annotation_grounded(
     *,
     pipeline,
     test_df: pd.DataFrame,
@@ -141,7 +141,7 @@ def run_context_aware(
     batch_size: int = 4,
 ):
     """
-    Build context-aware (few-shot) prompts per (comment_id, annotator_id),
+    Build annotation-grounded (few-shot) prompts per (comment_id, annotator_id),
     run the uncertainty pipeline in batches, and return a results dict.
 
     Output shape:
@@ -151,7 +151,7 @@ def run_context_aware(
     with open(context_path, "r") as f:
         context_dict = json.load(f)
         
-    # 1) Build all context-aware PromptItem entries (one per row/annotator)
+    # 1) Build all annotation-grounded PromptItem entries (one per row/annotator)
     items = build_prompts_context(
         test_df=test_df,
         context_dict=context_dict,
@@ -163,7 +163,7 @@ def run_context_aware(
 
     # 3) Stamp run metadata
     results["info"] = {
-        "approach": "context_aware_few_shot",
+        "approach": "annotation_grounded_few_shot",
         "model": model_path,
         "test_path": test_df_path,
         "generation_params": pipeline.generation_params,

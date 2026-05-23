@@ -102,14 +102,14 @@ def main():
         test_df_path=config.test_df_path,
         batch_size=config.batch_size
     )
-    print("[INFO] Persona evaluation complete.")
+    print("[INFO] Persona prompting evaluation complete.")
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     persona_out = f"{config.output_path}/persona_results_{flag}_{timestamp}.json"
     save_json(persona_results, persona_out)
 
-    # --- Run Context-Aware ---
-    context_results = evaluate.run_context_aware(
+    # --- Run Annotation-Grounded Few-Shot ---
+    context_results = evaluate.run_annotation_grounded(
         pipeline=pipeline,
         test_df=test_df[:15],
         model_path=config.model_path,
@@ -118,10 +118,10 @@ def main():
         example_count=config.context_doc_count,
         batch_size=config.batch_size
     )
-    print("[INFO] Context-aware evaluation complete.")
+    print("[INFO] Annotation-Grounded Few-Shot prompting evaluation complete.")
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    context_out = f"{config.output_path}/context_aware_results_{flag}_{timestamp}.json"
+    context_out = f"{config.output_path}/annotation-grounded_results_{flag}_{timestamp}.json"
 
     save_json(context_results, context_out)
 
