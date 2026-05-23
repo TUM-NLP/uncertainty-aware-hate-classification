@@ -5,7 +5,7 @@ While Large Language Models (LLMs) have been widely evaluated for hate speech de
 Beyond a zero-shot baseline, we augment prompts with few-shot examples that reflects persona behavior and introduce **Annotation-Grounded Few-Shot Prompting**: a novel approach that implicitly encodes annotator identity by incorporating few-shot examples drawn from annotators with specific demographic backgrounds, rather than explicitly defining persona attributes in the prompt. This allows the model to approximate the annotation behavior of a given demographic group without direct persona specification.
 
 > **Note:** 
-The paper's main results combine baseline predictions for certain examples with advanced prompting (persona or annotation-grounded) for highly uncertain ones. This repository runs all three approaches on the full test set independently — the uncertainty-based filtering and prediction-replacement logic is not included here.    
+The paper's main results combine baseline predictions for certain examples with advanced prompting (persona or annotation-grounded) for highly uncertain ones. This repository runs all three approaches on the full test set independently — the uncertainty-based filtering logic is not included here.    
 
 ## Overview
 
