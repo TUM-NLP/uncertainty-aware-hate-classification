@@ -21,23 +21,23 @@ git clone git@github.com:TUM-NLP/uncertainty-aware-hate-classification.git
 ```
 
 ### 2. Create Test and Knowledge Base Datasets
-The project uses the Measuring Hate Speech dataset from Hugging Face, formatted as follows:
+The project uses the Measuring Hate Speech dataset (MHS) and CRoss-cultural English Hate speech (CREHate) dataset from Hugging Face, formatted as follows:
 
 Text: [comment text]
 Hate Speech Score: [0, 1, or 2]
 Where:
 
 0: Not hate speech
-1: Uncertain
+1: Ambiguous
 2: Hate speech
 
-The dataset is curated in two parts
+The dataset is curated in two parts, seperately for both MHS and CREHate datasets.
 - Test Dataset: 500 annotated comments for evaluation
 - Knowledge Base Dataset for Bedrock: 1000 annotated comments with annotator demographics metadata (age, gender, race, education)
 
 
 ### 3. Set Up Amazon Bedrock Knowledge Base
-The Few-Shot Context-Aware Prompting approach requires an Amazon Bedrock Knowledge Base for semantic retrieval of similar annotated examples.
+The Annotation-Grounded Few-Shot Prompting approach requires an Amazon Bedrock Knowledge Base for the semantic retrieval of similar annotated examples.
 
 #### 1.Prepare your data source
 
@@ -57,7 +57,7 @@ The Few-Shot Context-Aware Prompting approach requires an Amazon Bedrock Knowled
 - Test retrieval with sample queries
 
 #### 4. Update config file
-- Copy your Knowledge Base ID and Data SOurce ID
+- Copy your Knowledge Base ID and Data Source ID
 - Update config.py with relevant information
 For detailed instructions, refer to the docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base.html
 
