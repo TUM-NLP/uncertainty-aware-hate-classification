@@ -1,6 +1,11 @@
 # Uncertainty-Aware Hate Speech Classification
 
-This repository contains the code for our EMNLP 2026 paper. We investigate how different prompting strategies affect both hate speech classification performance and prediction reliability in Large Language Models (LLMs), using white-box uncertainty quantification to measure when the model "knows what it doesn't know."
+While Large Language Models (LLMs) have been widely evaluated for hate speech detection, their reliability in subjective annotation settings remains underexplored. This repository implements a pipeline that applies Uncertainty Quantification (UQ) methods to assess LLM-based hate speech detection across two benchmark datasets. We use uncertainty scores to refine model outputs via threshold-based filtering — identifying ambiguous and potentially error-prone predictions and selectively applying more advanced prompting strategies.
+
+Beyond a zero-shot baseline, we augment prompts with few-shot examples that reflects persona behavior and introduce **Annotation-Grounded Few-Shot Prompting**: a novel approach that implicitly encodes annotator identity by incorporating few-shot examples drawn from annotators with specific demographic backgrounds, rather than explicitly defining persona attributes in the prompt. This allows the model to approximate the annotation behavior of a given demographic group without direct persona specification.
+
+> **Note:** 
+The paper's main results combine baseline predictions for certain examples with advanced prompting (persona or annotation-grounded) for highly uncertain ones. This repository runs all three approaches on the full test set independently — the uncertainty-based filtering and prediction-replacement logic is not included here.    
 
 ## Overview
 
@@ -9,14 +14,13 @@ We compare three prompting strategies for hate speech detection and analyze thei
 | Approach | Description |
 |---|---|
 | **Baseline** | Zero-shot prompting — the model classifies hate speech without any additional context |
-| **Persona Prompting** | The model is given a synthetic annotator persona (age, gender, race, education) before classifying |
-| **Annotation-Grounded Few-Shot** | Semantically similar annotated examples are retrieved from Amazon Bedrock Knowledge Bases and provided as few-shot context |
+| **Persona Prompting** | The model is given an annotator persona (age, gender, race, education) before classifying |
+| **Annotation-Grounded Few-Shot** | Semantically similar samples annotated by similar annotator are retrieved from Amazon Bedrock Knowledge Bases and provided as few-shot examples|
 
-For each prediction, the pipeline computes seven uncertainty scores via [LM-Polygraph](https://github.com/IINemo/lm-polygraph):
+For each prediction, the pipeline computes six uncertainty scores via [LM-Polygraph](https://github.com/IINemo/lm-polygraph):
 
 | Metric | Abbreviation |
 |---|---|
-| Claim-Conditioned Probability | `ccp` |
 | Maximum Sequence Probability | `msp` |
 | Perplexity | `perplexity` |
 | Mean Token Entropy | `mte` |
@@ -233,7 +237,7 @@ If you use this code, please cite our paper:
 @inproceedings{...,
   title     = {...},
   author    = {...},
-  booktitle = {Proceedings of the 2026 Conference on Empirical Methods in Natural Language Processing},
+  booktitle = {},
   year      = {2026},
 }
 ```
