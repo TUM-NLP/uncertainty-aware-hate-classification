@@ -48,7 +48,7 @@ def get_persona_prompt(text: str, row: pd.Series) -> str:
         annotator_education=education,
     )
 
-def get_context_aware_prompt(text: str, examples_block: str) -> str:
+def get_annotation_grounded_few_shot_prompt(text: str, examples_block: str) -> str:
     return rag_template.format(text=text, examples=examples_block)
 
 # ------- builders for each approach (returns a flat list[PromptItem]) -------
@@ -105,7 +105,7 @@ def build_prompts_context(
         
         ex_block = extract_example(contexts,example_count)
         
-        prompt = get_context_aware_prompt(row["text"], ex_block)
+        prompt = get_annotation_grounded_few_shot_prompt(row["text"], ex_block)
         items.append(PromptItem(
             comment_id=row["comment_id"],
             annotator_id=row.get("annotator_id"),
