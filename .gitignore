@@ -8,9 +8,6 @@ __pycache__/
 *.pyc
 *.pyo
 
-# Output and results
-output/
-results/
 # SSH keys and credentials
 *.pem
 *.key
