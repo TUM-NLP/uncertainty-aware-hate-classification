@@ -7,6 +7,7 @@ import config
 import transformers
 from huggingface_hub import login
 from datetime import datetime
+from pathlib import Path
 
 
 from src import rag, rag_utils, evaluate, uncertainty, prompt
@@ -43,6 +44,10 @@ def setup_environment():
 
 def main():
     setup_environment()
+
+    # --- Create output folder if it does not exist ---
+    output_dir = Path(config.output_path)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     # --- Load Test Data ---
     test_df = load_test_df(config.test_df_path)
