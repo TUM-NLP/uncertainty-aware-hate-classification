@@ -84,7 +84,7 @@ uncertainty-aware-hate-classification/
 ### 1. Clone the repository
 
 ```bash
-git clone git@github.com:TUM-NLP/uncertainty-aware-hate-classification.git
+git clone git@github.com:xxxx/uncertainty-aware-hate-classification.git
 cd uncertainty-aware-hate-classification
 ```
 
